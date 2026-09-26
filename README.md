@@ -80,7 +80,7 @@ The raw data was cleaned and transformed using **Python + Pandas**.
 - CIBIL imputation
 - CIBIL risk segmentation
 - EMI calculation
-- FOIR / DTI calculation
+- FOIR /  DTI calculation
 - Star-schema preparation
 
 The pipeline then loads the analytical tables into MySQL for SQL analysis. :chatgpt-content-reference{index="1"}
