@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BFSI Credit Risk Intelligence Dashboard</title>
+<meta name="description" content="Executive-grade BFSI retail credit risk intelligence dashboard with glassmorphic dark theme.">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0C1220;--bg-deep:#080D18;--bg-card:rgba(16,27,50,0.88);--bg-card2:rgba(13,22,42,0.92);
+  --bg-glass:rgba(20,35,65,0.6);--border:rgba(38,60,100,0.6);--border-lg:rgba(0,210,255,0.2);
+  --cyan:#00D2FF;--cyan-dim:rgba(0,210,255,0.14);--crimson:#FF3366;--emerald:#00E676;
+  --gold:#FFB800;--teal:#38BDF8;--purple:#818CF8;
+  --text1:#F0F6FF;--text2:#8CA5C5;--text3:#4B6380;
+  --sb:215px;--rp:298px;--r:14px;--font:'Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg-deep);color:var(--text1);display:flex;overflow:hidden}
+body::before{content:'';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:900px;height:700px;
+  background:radial-gradient(ellipse at center,rgba(0,180,255,0.06) 0%,rgba(0,60,120,0.04) 40%,transparent 70%);
+  pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;top:18%;left:44%;width:500px;height:500px;
+  background:radial-gradient(ellipse,rgba(0,210,255,0.065) 0%,transparent 65%);
+  pointer-events:none;z-index:0}
+
+/* ---- SIDEBAR ---- */
+.sidebar{width:var(--sb);min-height:100vh;background:var(--bg-card2);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  padding:22px 0 20px;position:relative;z-index:10;flex-shrink:0}
+.sb-logo{display:flex;align-items:center;gap:9px;padding:0 18px 22px;border-bottom:1px solid var(--border)}
+.sb-logo-icon{width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--cyan),#006EAE);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 16px rgba(0,210,255,0.35)}
+.sb-logo-icon svg{width:18px;height:18px}
+.sb-logo-name{font-size:1rem;font-weight:800;letter-spacing:-.02em;color:var(--text1)}
+.sb-logo-name span{color:var(--cyan)}
+.sb-section-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);
+  font-weight:700;padding:16px 18px 5px}
+.sb-nav{display:flex;flex-direction:column;gap:2px;padding:0 10px;flex:1}
+.sbi{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;
+  font-size:.78rem;font-weight:500;color:var(--text2);cursor:pointer;
+  transition:all .2s;position:relative}
+.sbi:hover{background:var(--bg-glass);color:var(--text1)}
+.sbi.on{background:linear-gradient(90deg,rgba(0,210,255,0.15),rgba(0,210,255,0.05));
+  color:var(--cyan);border:1px solid rgba(0,210,255,0.2)}
+.sbi.on::before{content:'';position:absolute;left:0;top:22%;bottom:22%;
+  width:3px;border-radius:3px;background:var(--cyan)}
+.sb-icon{width:16px;height:16px;opacity:.7;flex-shrink:0}
+.sbi.on .sb-icon{opacity:1}
+.sb-badge{margin-left:auto;font-size:.6rem;font-weight:700;background:var(--crimson);color:#fff;
+  border-radius:20px;padding:1px 6px;min-width:18px;text-align:center}
+.sb-div{height:1px;background:var(--border);margin:8px 10px}
+.sb-bot{padding:0 10px}
+.sbsm{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;
+  font-size:.75rem;font-weight:500;color:var(--text2);cursor:pointer;transition:all .2s}
+.sbsm:hover{background:var(--bg-glass);color:var(--text1)}
+.sb-up{margin:10px 10px 0;border-radius:12px;
+  background:linear-gradient(135deg,rgba(0,210,255,0.11),rgba(0,100,200,0.14));
+  border:1px solid rgba(0,210,255,0.2);padding:13px 14px}
+.sb-up-title{font-size:.73rem;font-weight:700;color:var(--text1);margin-bottom:3px}
+.sb-up-sub{font-size:.63rem;color:var(--text2);line-height:1.4;margin-bottom:9px}
+.sb-up-btn{width:100%;padding:7px;border-radius:8px;background:var(--cyan);
+  color:#030B18;font-size:.7rem;font-weight:700;border:none;cursor:pointer;transition:opacity .2s}
+.sb-up-btn:hover{opacity:.85}
+.tog{display:flex;align-items:center;gap:8px;padding:8px 10px;margin:6px 10px 0;
+  font-size:.72rem;color:var(--text2)}
+.tog-track{width:32px;height:18px;background:var(--cyan);border-radius:20px;
+  position:relative;cursor:pointer;margin-left:auto}
+.tog-thumb{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:#fff}
+
+/* ---- MAIN ---- */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:5}
+.topbar{display:flex;align-items:center;gap:11px;padding:15px 20px 12px;
+  border-bottom:1px solid var(--border);flex-shrink:0}
+.tb-title{flex:1}
+.tb-bc{font-size:.64rem;color:var(--text3);font-weight:500;letter-spacing:.05em;
+  text-transform:uppercase;margin-bottom:2px}
+.tb-h{font-size:1.45rem;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(90deg,#E8F4FF,var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.view-tabs{display:flex;gap:3px;background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);border-radius:10px;padding:3px}
+.vtab{font-size:.68rem;font-weight:600;padding:5px 10px;border-radius:7px;
+  cursor:pointer;color:var(--text2);transition:all .2s}
+.vtab.on{background:var(--cyan);color:#030B18}
+.tb-search{display:flex;align-items:center;gap:7px;background:var(--bg-glass);
+  border:1px solid var(--border);border-radius:10px;padding:7px 12px}
+.tb-search input{background:none;border:none;outline:none;font:inherit;font-size:.72rem;
+  color:var(--text1);width:135px}
+.tb-search input::placeholder{color:var(--text3)}
+.avatar{display:flex;align-items:center;gap:8px;padding:5px 11px 5px 5px;
+  background:var(--bg-glass);border:1px solid var(--border);border-radius:30px;cursor:pointer}
+.av-img{width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),#0060AA);
+  display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff}
+.av-name{font-size:.71rem;font-weight:600}
+.av-role{font-size:.59rem;color:var(--text2)}
+
+.ms{flex:1;overflow-y:auto;overflow-x:hidden;padding:15px 20px 14px;
+  display:flex;flex-direction:column;gap:13px}
+.ms::-webkit-scrollbar{width:4px}
+.ms::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ---- CARD HERO ---- */
+.card-sec{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.cc-wrap{perspective:1000px}
+.cc{width:278px;height:163px;border-radius:18px;position:relative;
+  background:linear-gradient(135deg,#0A2545 0%,#0E3A6B 35%,#061C3A 65%,#030E1F 100%);
+  box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(0,210,255,0.22),inset 0 1px 0 rgba(255,255,255,0.08);
+  overflow:hidden;cursor:pointer;transition:transform .4s ease;
+  animation:float 6s ease-in-out infinite}
+.cc:hover{transform:rotateY(-6deg) rotateX(3deg) scale(1.02)}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.cc::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 40%,rgba(0,210,255,0.07) 50%,transparent 60%);
+  animation:sh 3s infinite}
+@keyframes sh{0%{background-position:-100% 0}100%{background-position:200% 0}}
+.cc-h1{position:absolute;width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,210,255,0.14) 0%,transparent 60%);top:-40px;right:-40px}
+.cc-h2{position:absolute;width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(56,189,248,0.1) 0%,transparent 60%);bottom:-30px;left:-20px}
+.cc-in{position:relative;z-index:2;padding:17px 21px;height:100%;display:flex;flex-direction:column}
+.chip{width:33px;height:25px;border-radius:5px;
+  background:linear-gradient(135deg,#d4a843,#f0cc6a,#b8943a);margin-bottom:13px;position:relative}
+.chip::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:17px;height:13px;border:1px solid rgba(0,0,0,0.3);border-radius:2px}
+.cc-num{font-size:.77rem;letter-spacing:.18em;color:rgba(255,255,255,0.7);
+  font-weight:500;margin-bottom:auto}
+.cc-num span{color:rgba(255,255,255,0.32)}
+.cc-bot{display:flex;justify-content:space-between;align-items:flex-end}
+.cc-lbl{font-size:.55rem;text-transform:uppercase;letter-spacing:.1em;
+  color:rgba(255,255,255,0.38);margin-bottom:2px}
+.cc-val{font-size:.82rem;font-weight:700;color:#fff}
+.cc-amt{font-size:1.1rem;font-weight:800;color:var(--cyan)}
+.cc-logo{display:flex}
+.cc-lc{width:27px;height:27px;border-radius:50%;border:2px solid rgba(255,255,255,0.2)}
+.cc-lc:first-child{background:rgba(255,100,50,0.6)}
+.cc-lc:last-child{background:rgba(255,180,0,0.6);margin-left:-11px}
+
+.action-row{display:flex;gap:9px;margin-top:11px}
+.abt{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;flex:1}
+.ab-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:.95rem;border:1px solid var(--border);background:var(--bg-glass);transition:all .2s}
+.abt:hover .ab-icon{background:var(--cyan-dim);border-color:var(--border-lg)}
+.ab-lbl{font-size:.61rem;color:var(--text2);font-weight:500}
+
+/* ---- KPI GRID ---- */
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1}
+.kc{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+  padding:12px 14px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+.kc:hover{border-color:var(--border-lg);transform:translateY(-2px)}
+.kc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0}
+.kc.cy::before{background:var(--cyan)}.kc.cr::before{background:var(--crimson)}
+.kc.go::before{background:var(--gold)}.kc.gr::before{background:var(--emerald)}
+.kc.te::before{background:var(--teal)}.kc.pu::before{background:var(--purple)}
+.kc-ico{font-size:1.05rem;margin-bottom:4px}
+.kc-val{font-size:1.18rem;font-weight:800;letter-spacing:-.03em;line-height:1;margin-bottom:3px}
+.cy .kc-val{color:var(--cyan)}.cr .kc-val{color:var(--crimson)}
+.go .kc-val{color:var(--gold)}.gr .kc-val{color:var(--emerald)}
+.te .kc-val{color:var(--teal)}.pu .kc-val{color:var(--purple)}
+.kc-lbl{font-size:.61rem;color:var(--text2);font-weight:500;line-height:1.3}
+
+/* ---- PANELS ---- */
+.panel{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:15px 17px}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.pt{font-size:.86rem;font-weight:700;color:var(--text1)}
+.ps{font-size:.63rem;color:var(--text2);margin-top:1px}
+.pbn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:8px;
+  background:var(--cyan);color:#030B18;font-size:.67rem;font-weight:700;
+  border:none;cursor:pointer;transition:opacity .2s}
+.pbn:hover{opacity:.85}
+.mtabs{display:flex;gap:4px;margin-bottom:10px}
+.mtab{padding:4px 10px;border-radius:20px;font-size:.62rem;font-weight:600;
+  color:var(--text3);cursor:pointer;transition:all .2s}
+.mtab.on{background:var(--cyan);color:#030B18}
+.mtab:hover:not(.on){color:var(--text1)}
+
+/* ---- EVENT CARDS ---- */
+.erow{display:flex;gap:8px;margin-top:11px}
+.ec{flex:1;border-radius:10px;padding:9px 11px;font-size:.63rem;font-weight:600;
+  border:1px solid;position:relative;overflow:hidden}
+.ec.d{background:rgba(255,51,102,0.1);border-color:rgba(255,51,102,0.3);color:#FF6B8B}
+.ec.w{background:rgba(255,184,0,0.08);border-color:rgba(255,184,0,0.25);color:#FFCA3A}
+.ec.i{background:rgba(0,210,255,0.08);border-color:rgba(0,210,255,0.22);color:var(--cyan)}
+.ec.g{background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.22);color:#30F890}
+.edot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px}
+.d .edot{background:var(--crimson)}.w .edot{background:var(--gold)}
+.i .edot{background:var(--cyan)}.g .edot{background:var(--emerald)}
+.emeta{font-size:.57rem;font-weight:400;color:var(--text3);margin-top:2px}
+
+/* ---- RIGHT PANEL ---- */
+.rp{width:var(--rp);min-height:100vh;background:var(--bg-card2);
+  border-left:1px solid var(--border);display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;padding:15px 15px;gap:13px;
+  flex-shrink:0;position:relative;z-index:10}
+.rp::-webkit-scrollbar{width:3px}
+.rp::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.rpt{font-size:.77rem;font-weight:700;color:var(--text1);margin-bottom:7px}
+.rps{font-size:.61rem;color:var(--text2);margin-bottom:9px}
+.alist{display:flex;flex-direction:column;gap:6px}
+.ai{display:flex;align-items:center;gap:9px;padding:9px 10px;
+  background:var(--bg-glass);border:1px solid var(--border);border-radius:10px;transition:border-color .2s}
+.ai:hover{border-color:rgba(0,210,255,0.22)}
+.ai-ico{width:32px;height:32px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.83rem}
+.ai-ico.d{background:rgba(255,51,102,0.14)}.ai-ico.w{background:rgba(255,184,0,0.11)}
+.ai-ico.g{background:rgba(0,230,118,0.11)}.ai-ico.i{background:rgba(0,210,255,0.11)}
+.ai-txt{flex:1;min-width:0}
+.ai-t{font-size:.67rem;font-weight:600;color:var(--text1);line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-s{font-size:.58rem;color:var(--text2);margin-top:1px}
+.ai-amt{font-size:.69rem;font-weight:700;text-align:right;flex-shrink:0}
+.ai-amt.r{color:var(--crimson)}.ai-amt.g{color:var(--emerald)}.ai-amt.o{color:var(--gold)}
+.dp{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:13px}
+.dw{position:relative;display:flex;align-items:center;justify-content:center;margin:7px 0}
+.dc{position:absolute;text-align:center}
+.dc-v{font-size:1rem;font-weight:800;color:var(--text1);line-height:1}
+.dc-l{font-size:.54rem;color:var(--text2);margin-top:2px}
+.dl{display:flex;flex-direction:column;gap:5px;margin-top:7px}
+.dli{display:flex;align-items:center;gap:7px;font-size:.62rem}
+.dl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.dl-n{flex:1;color:var(--text2)}.dl-p{font-weight:700;color:var(--text1)}
+.ep{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:13px}
+.ebr{display:flex;flex-direction:column;gap:8px;margin-top:7px}
+.ebb-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.ebb-l{font-size:.64rem;color:var(--text2)}.ebb-v{font-size:.64rem;font-weight:700;color:var(--text1)}
+.ebb-t{height:5px;border-radius:5px;background:rgba(255,255,255,0.05);overflow:hidden}
+.ebb-f{height:100%;border-radius:5px}
+.sbadge{background:linear-gradient(90deg,rgba(255,51,102,0.12),rgba(255,51,102,0.06));
+  border:1px solid rgba(255,51,102,0.3);border-radius:10px;padding:10px 12px;
+  display:flex;align-items:center;gap:8px}
+.sbadge-ico{font-size:.95rem;flex-shrink:0}
+.sbadge-txt{flex:1;font-size:.64rem;font-weight:600;color:#FF8FAB;line-height:1.4}
+.sbadge-pct{font-size:.74rem;font-weight:800;color:var(--crimson);flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.48}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes fup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.a1{animation:fup .5s ease both}.a2{animation:fup .5s .1s ease both}
+.a3{animation:fup .5s .18s ease both}.a4{animation:fup .5s .26s ease both}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+<div class="sb-logo">
+  <div class="sb-logo-icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z" fill="rgba(255,255,255,0.92)"/>
+      <path d="M9 12l2 2 4-4" stroke="#0C1220" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div><div class="sb-logo-name"><span>BFSI</span> Risk</div></div>
+</div>
+<div class="sb-section-lbl">Main Menu</div>
+<nav class="sb-nav">
+  <div class="sbi on">
+    <svg class="sb-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+    Dashboard
+  </div>
+  <div class="sbi">
+    <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Portfolio Monitor
+  </div>
+  <div class="sbi">
+    <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3C8 7 8 17 12 21M12 3c4 4 4 14 0 18M3 12h18"/></svg>
+    Geo Analytics
+    <span class="sb-badge">12</span>
+  </div>
+  <div class="sbi">
+    <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    Bureau Matrix
+  </div>
+  <div class="sbi">
+    <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Risk Reports
+  </div>
+</nav>
+<div class="sb-div"></div>
+<div class="sb-bot">
+  <div class="sbsm">
+    <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    Notifications
+    <span class="sb-badge" style="background:var(--gold);color:#030B18;">24</span>
+  </div>
+  <div class="sbsm">
+    <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07M4.93 4.93A10 10 0 0 0 19.07 19.07"/></svg>
+    Settings
+  </div>
+  <div class="sb-up">
+    <div style="font-size:1rem;margin-bottom:5px">⚡</div>
+    <div class="sb-up-title">Upgrade to Pro</div>
+    <div class="sb-up-sub">Unlock AI stress testing, DPD matrix & Basel III ECL engine.</div>
+    <button class="sb-up-btn">Upgrade Now</button>
+  </div>
+  <div class="tog"><span>Dark Mode</span><div class="tog-track"><div class="tog-thumb"></div></div></div>
+</div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+<div class="topbar">
+  <div class="tb-title">
+    <div class="tb-bc">Cards / Credit Risk</div>
+    <div class="tb-h">Credit Risk Portfolio</div>
+  </div>
+  <div class="view-tabs">
+    <div class="vtab on">Grid View</div>
+    <div class="vtab">List View</div>
+    <div class="vtab">Detailed View</div>
+  </div>
+  <div class="tb-search">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4B6380" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" placeholder="Search portfolios...">
+  </div>
+  <div style="width:1px;height:28px;background:var(--border)"></div>
+  <div class="avatar">
+    <div class="av-img">RK</div>
+    <div><div class="av-name">Risk Mgr</div><div class="av-role">CRO Level</div></div>
+  </div>
+</div>
+
+<div class="ms">
+
+  <!-- CARD + KPI -->
+  <div class="card-sec a1">
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div class="cc-wrap">
+        <div class="cc">
+          <div class="cc-h1"></div><div class="cc-h2"></div>
+          <div class="cc-in">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div class="chip"></div>
+              <div style="font-size:.57rem;color:rgba(255,255,255,0.48);letter-spacing:.06em;font-weight:600">RETAIL PORTFOLIO</div>
+            </div>
+            <div class="cc-num">3673 &nbsp; 3673 &nbsp; <span>3673</span> &nbsp; <span>3673</span></div>
+            <div class="cc-bot">
+              <div><div class="cc-lbl">Gross Book</div><div class="cc-amt">&#8377;12bn</div></div>
+              <div><div class="cc-lbl">Expires</div><div class="cc-val">12 / 25</div></div>
+              <div class="cc-logo"><div class="cc-lc"></div><div class="cc-lc"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="action-row">
+        <div class="abt"><div class="ab-icon">&#128260;</div><div class="ab-lbl">Refresh</div></div>
+        <div class="abt"><div class="ab-icon">&#128228;</div><div class="ab-lbl">Export</div></div>
+        <div class="abt"><div class="ab-icon">&#128202;</div><div class="ab-lbl">Analytics</div></div>
+        <div class="abt"><div class="ab-icon">&#128203;</div><div class="ab-lbl">Statement</div></div>
+      </div>
+    </div>
+    <div class="kgrid">
+      <div class="kc cy"><div class="kc-ico">&#128176;</div><div class="kc-val">&#8377;12.0bn</div><div class="kc-lbl">Gross Disbursed<br>Sanctioned Book</div></div>
+      <div class="kc cr"><div class="kc-ico">&#9888;&#65039;</div><div class="kc-val">&#8377;4.21bn</div><div class="kc-lbl">GNPA Exposure<br>Defaulted Book</div></div>
+      <div class="kc go"><div class="kc-ico">&#127974;</div><div class="kc-val">35.8%</div><div class="kc-lbl">GNPA Ratio<br>vs 6% RBI Norm</div></div>
+      <div class="kc gr"><div class="kc-ico">&#128737;&#65039;</div><div class="kc-val">70.0%</div><div class="kc-lbl">Provision Coverage<br>Ratio (PCR)</div></div>
+      <div class="kc te"><div class="kc-ico">&#11088;</div><div class="kc-val">716</div><div class="kc-lbl">Avg CIBIL Score<br>Portfolio</div></div>
+      <div class="kc pu"><div class="kc-ico">&#128101;</div><div class="kc-val">25K</div><div class="kc-lbl">Active Borrowers<br>12 Metro Hubs</div></div>
+    </div>
+  </div>
+
+  <!-- DUAL CHART ROW -->
+  <div style="display:grid;grid-template-columns:1fr 1.08fr;gap:12px" class="a2">
+    <div class="panel">
+      <div class="ph">
+        <div><div class="pt">Denied vs Authorized by Product</div>
+        <div class="ps">&#9679; Performing (Cyan) &nbsp;|&nbsp; &#9632; GNPA (Crimson)</div></div>
+      </div>
+      <div style="position:relative;height:200px"><canvas id="chartBar"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <div><div class="pt">Authorized Amount by CIBIL Tier</div>
+        <div class="ps">Capital allocation across bureau risk tiers</div></div>
+      </div>
+      <div id="treemapCibil" style="height:200px;display:flex;flex-direction:column;gap:3px;border-radius:10px;overflow:hidden"></div>
+    </div>
+  </div>
+
+  <!-- MONTHLY COMBO CHART -->
+  <div class="panel a3">
+    <div class="ph">
+      <div><div class="pt">Monthly Default Inflow &amp; Collective Default Value</div>
+      <div class="ps">Jan 2024 &#8211; Dec 2025 &nbsp;&#183;&nbsp; Bars = Default &#8377;Cr &nbsp;|&nbsp; Line = Default Count</div></div>
+      <button class="pbn">+ New Alert Rule</button>
+    </div>
+    <div class="mtabs">
+      <div class="mtab on">All</div>
+      <div class="mtab">2024</div>
+      <div class="mtab">2025</div>
+      <div class="mtab">Q3</div>
+      <div class="mtab">Q4</div>
+    </div>
+    <div style="position:relative;height:165px"><canvas id="chartCombo"></canvas></div>
+    <div class="erow">
+      <div class="ec d"><span class="edot"></span>High Stress: Oct 2025 &#8377;210Cr<div class="emeta">DPD 90+ spike &#183; 324 defaults</div></div>
+      <div class="ec w"><span class="edot"></span>Moderate: Mar 2025 &#8377;206Cr<div class="emeta">Post-festival defaults surge</div></div>
+      <div class="ec i"><span class="edot"></span>Watch: Jul 2025 &#8377;192Cr<div class="emeta">Monsoon season stress</div></div>
+      <div class="ec g"><span class="edot"></span>Low: Feb 2025 &#8377;138Cr<div class="emeta">Best performing month</div></div>
+    </div>
+  </div>
+
+  <!-- CITY + DONUT -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" class="a4">
+    <div class="panel">
+      <div class="ph">
+        <div><div class="pt">Approved Value per Location</div>
+        <div class="ps">&#10010; Capital disbursed across 12 metro hubs</div></div>
+      </div>
+      <div id="treemapCity" style="height:128px;display:flex;flex-direction:column;gap:2px;border-radius:9px;overflow:hidden"></div>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <div><div class="pt">Default Amount per Location</div>
+        <div class="ps">&#9679; GNPA: Metro Tier 1 vs Growth Tier 2</div></div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center">
+        <div style="position:relative;flex-shrink:0">
+          <canvas id="chartDonut" width="128" height="128"></canvas>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+            <div style="font-size:.88rem;font-weight:800;color:var(--text1)">&#8377;4.2bn</div>
+            <div style="font-size:.51rem;color:var(--text2)">Total GNPA</div>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:9px">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:.64rem;color:var(--text2)">Tier 1 Metro</span>
+              <span style="font-size:.64rem;font-weight:700;color:var(--cyan)">51.5%</span>
+            </div>
+            <div style="height:5px;border-radius:5px;background:rgba(255,255,255,0.06);overflow:hidden">
+              <div style="height:100%;width:51.5%;background:var(--cyan);border-radius:5px"></div>
+            </div>
+            <div style="font-size:.57rem;color:var(--text3);margin-top:2px">&#8377;2.17bn &#183; Mumbai, Bengaluru, Delhi NCR</div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:.64rem;color:var(--text2)">Tier 2 Growth</span>
+              <span style="font-size:.64rem;font-weight:700;color:var(--teal)">48.5%</span>
+            </div>
+            <div style="height:5px;border-radius:5px;background:rgba(255,255,255,0.06);overflow:hidden">
+              <div style="height:100%;width:48.5%;background:var(--teal);border-radius:5px"></div>
+            </div>
+            <div style="font-size:.57rem;color:var(--text3);margin-top:2px">&#8377;2.04bn &#183; Pune, Kochi, Chandigarh</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<!-- RIGHT PANEL -->
+<aside class="rp">
+  <div class="sbadge">
+    <div class="sbadge-ico">&#9889;</div>
+    <div class="sbadge-txt">PORTFOLIO STRESS ALERT: GNPA 35.83% exceeds RBI 6% benchmark</div>
+    <div class="sbadge-pct pulse">35.8%</div>
+  </div>
+
+  <div>
+    <div class="rpt">Card &amp; Account Activities</div>
+    <div class="rps">Latest portfolio risk events</div>
+    <div class="alist">
+      <div class="ai"><div class="ai-ico d">&#128680;</div>
+        <div class="ai-txt"><div class="ai-t">High GNPA &#8212; Two-Wheeler/Vehicle</div><div class="ai-s">Oct 2025 &#183; Overleveraged FOIR</div></div>
+        <div class="ai-amt r">-&#8377;612Cr</div></div>
+      <div class="ai"><div class="ai-ico w">&#9888;&#65039;</div>
+        <div class="ai-txt"><div class="ai-t">Education Loan Stress</div><div class="ai-s">GNPA exposure &#183; CIBIL dip</div></div>
+        <div class="ai-amt r">-&#8377;610Cr</div></div>
+      <div class="ai"><div class="ai-ico w">&#128179;</div>
+        <div class="ai-txt"><div class="ai-t">Home Renovation Defaults</div><div class="ai-s">Post-monsoon DPD 90+ spike</div></div>
+        <div class="ai-amt r">-&#8377;607Cr</div></div>
+      <div class="ai"><div class="ai-ico g">&#9989;</div>
+        <div class="ai-txt"><div class="ai-t">Business Expansion &#183; Performing</div><div class="ai-s">Top performing segment</div></div>
+        <div class="ai-amt g">+&#8377;1,098Cr</div></div>
+      <div class="ai"><div class="ai-ico i">&#128202;</div>
+        <div class="ai-txt"><div class="ai-t">PCR Coverage Adequate</div><div class="ai-s">70% &#183; Basel compliant</div></div>
+        <div class="ai-amt o">70.0%</div></div>
+    </div>
+  </div>
+
+  <div class="dp">
+    <div class="rpt">Monthly CIBIL Score Usage</div>
+    <div style="font-size:.61rem;color:var(--text2);margin-bottom:4px">Bureau tier capital distribution</div>
+    <div class="dw" style="height:140px">
+      <canvas id="chartCibilDonut" width="140" height="140"></canvas>
+      <div class="dc"><div class="dc-v">&#8377;11.74bn</div><div class="dc-l">Total Book</div></div>
+    </div>
+    <div class="dl">
+      <div class="dli"><div class="dl-dot" style="background:#00D2FF"></div><div class="dl-n">Prime (750+)</div><div class="dl-p">40.1%</div></div>
+      <div class="dli"><div class="dl-dot" style="background:#38BDF8"></div><div class="dl-n">Near Prime (650&#8211;749)</div><div class="dl-p">38.4%</div></div>
+      <div class="dli"><div class="dl-dot" style="background:#FF3366"></div><div class="dl-n">Subprime (550&#8211;649)</div><div class="dl-p">17.2%</div></div>
+      <div class="dli"><div class="dl-dot" style="background:#FF0033"></div><div class="dl-n">Deep Subprime (&lt;550)</div><div class="dl-p">4.3%</div></div>
+    </div>
+  </div>
+
+  <div class="ep">
+    <div class="rpt">Expense Overview</div>
+    <div style="font-size:.61rem;color:var(--text2);margin-bottom:5px">City GNPA exposure breakdown</div>
+    <div class="ebr">
+      <div><div class="ebb-h"><span class="ebb-l">Pune</span><span class="ebb-v">&#8377;1,040Cr</span></div><div class="ebb-t"><div class="ebb-f" style="width:100%;background:var(--cyan)"></div></div></div>
+      <div><div class="ebb-h"><span class="ebb-l">Lucknow</span><span class="ebb-v">&#8377;1,016Cr</span></div><div class="ebb-t"><div class="ebb-f" style="width:97.7%;background:var(--teal)"></div></div></div>
+      <div><div class="ebb-h"><span class="ebb-l">Bengaluru</span><span class="ebb-v">&#8377;1,008Cr</span></div><div class="ebb-t"><div class="ebb-f" style="width:96.9%;background:var(--teal)"></div></div></div>
+      <div><div class="ebb-h"><span class="ebb-l">Chennai</span><span class="ebb-v">&#8377;1,002Cr</span></div><div class="ebb-t"><div class="ebb-f" style="width:96.3%;background:#38BDF8"></div></div></div>
+      <div><div class="ebb-h"><span class="ebb-l">Mumbai</span><span class="ebb-v">&#8377;976Cr</span></div><div class="ebb-t"><div class="ebb-f" style="width:93.8%;background:var(--purple)"></div></div></div>
+      <div><div class="ebb-h"><span class="ebb-l">Jaipur</span><span class="ebb-v">&#8377;907Cr</span></div><div class="ebb-t"><div class="ebb-f" style="width:87.2%;background:var(--crimson)"></div></div></div>
+    </div>
+  </div>
+</aside>
+
+<script>
+Chart.defaults.font.family="'Inter',sans-serif";
+Chart.defaults.color='#8CA5C5';
+const C={cyan:'#00D2FF',crimson:'#FF3366',emerald:'#00E676',gold:'#FFB800',teal:'#38BDF8',purple:'#818CF8',grid:'rgba(38,60,100,0.45)'};
+const TT={backgroundColor:'rgba(8,13,24,0.97)',borderColor:'rgba(0,210,255,0.25)',borderWidth:1,titleColor:'#F0F6FF',bodyColor:'#8CA5C5',padding:10,cornerRadius:8};
+
+// BAR
+new Chart(document.getElementById('chartBar').getContext('2d'),{
+  type:'bar',
+  data:{
+    labels:['Business Exp.','Education','Home Renov.','Debt Consol.','Med. Emergency','Two-Wheeler','Wedding/Fam.'],
+    datasets:[
+      {label:'Authorized (Performing)',data:[1098,1097,1089,1060,1080,1048,1062],backgroundColor:'rgba(0,210,255,0.65)',borderColor:C.cyan,borderWidth:1,borderRadius:4},
+      {label:'Denied (GNPA)',data:[593,610,607,586,593,612,604],backgroundColor:'rgba(255,51,102,0.65)',borderColor:C.crimson,borderWidth:1,borderRadius:4}
+    ]
+  },
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{color:'#8CA5C5',padding:9,font:{size:9.5},boxWidth:10,boxHeight:10}},tooltip:{...TT,callbacks:{label:c=>' Rs.'+c.raw+'Cr'}}},
+    scales:{x:{grid:{color:C.grid},ticks:{color:'#4B6380',font:{size:9},callback:v=>'Rs.'+v}},y:{grid:{display:false},ticks:{color:'#8CA5C5',font:{size:9}}}}}
+});
+
+// CIBIL TREEMAP
+(function(){
+  var c=document.getElementById('treemapCibil');
+  var d=[{n:'Prime (750+)',v:4707,s:'Rs.4.71bn',col:'#065F8B',p:'40.1%'},{n:'Near Prime (650-749)',v:4507,s:'Rs.4.51bn',col:'#046E9C',p:'38.4%'},{n:'Subprime (550-649)',v:2022,s:'Rs.2.02bn',col:'#8B1A34',p:'17.2%'},{n:'Deep Sub (<550)',v:507,s:'Rs.0.51bn',col:'#6B0E22',p:'4.3%'}];
+  var r1=document.createElement('div');r1.style='display:flex;gap:3px;flex:0 0 62%;';
+  d.slice(0,2).forEach(function(x){var e=document.createElement('div');e.style='flex:'+x.v+';background:'+x.col+';border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:filter .2s';e.onmouseenter=function(){e.style.filter='brightness(1.25)'};e.onmouseleave=function(){e.style.filter=''};e.innerHTML='<div style="font-size:.76rem;font-weight:700;color:rgba(255,255,255,.95);text-shadow:0 1px 4px rgba(0,0,0,.6)">'+x.n+'</div><div style="font-size:.63rem;color:rgba(255,255,255,.65);margin-top:3px">'+x.s+' - '+x.p+'</div>';r1.appendChild(e)});c.appendChild(r1);
+  var r2=document.createElement('div');r2.style='display:flex;gap:3px;flex:1;';
+  d.slice(2).forEach(function(x){var e=document.createElement('div');e.style='flex:'+x.v+';background:'+x.col+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:filter .2s';e.onmouseenter=function(){e.style.filter='brightness(1.25)'};e.onmouseleave=function(){e.style.filter=''};e.innerHTML='<div style="font-size:.7rem;font-weight:700;color:rgba(255,255,255,.9)">'+x.n+'</div><div style="font-size:.6rem;color:rgba(255,255,255,.6);margin-top:2px">'+x.s+'</div>';r2.appendChild(e)});c.appendChild(r2);
+})();
+
+// CITY TREEMAP
+(function(){
+  var c=document.getElementById('treemapCity');
+  var cities=[{n:'Pune',v:1040,col:'#064F78'},{n:'Lucknow',v:1016,col:'#055B8A'},{n:'Bengaluru',v:1008,col:'#04679C'},{n:'Chennai',v:1002,col:'#0373AE'},{n:'Kochi',v:997,col:'#027FBF'},{n:'Chandigarh',v:986,col:'#018BD0'},{n:'Mumbai',v:976,col:'#0097E0'},{n:'Kolkata',v:962,col:'#00A3EF'},{n:'Delhi NCR',v:957,col:'#00AFFE'},{n:'Hyderabad',v:948,col:'#009FEE'},{n:'Ahmedabad',v:942,col:'#0093DC'},{n:'Jaipur',v:907,col:'#0087CB'}];
+  for(var r=0;r<3;r++){var row=document.createElement('div');row.style='display:flex;gap:2px;flex:1;';cities.slice(r*4,r*4+4).forEach(function(x){var e=document.createElement('div');e.style='flex:'+x.v+';background:'+x.col+';border-radius:4px;padding:5px 7px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:filter .2s;min-width:28px;overflow:hidden';e.onmouseenter=function(){e.style.filter='brightness(1.3)'};e.onmouseleave=function(){e.style.filter=''};e.innerHTML='<div style="font-size:.63rem;font-weight:700;color:rgba(255,255,255,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+x.n+'</div><div style="font-size:.54rem;color:rgba(255,255,255,.6)">Rs.'+(x.v/100).toFixed(2)+'bn</div>';row.appendChild(e)});c.appendChild(row)}
+})();
+
+// COMBO
+var months=['Jan-24','Feb-24','Mar-24','Apr-24','May-24','Jun-24','Jul-24','Aug-24','Sep-24','Oct-24','Nov-24','Dec-24','Jan-25','Feb-25','Mar-25','Apr-25','May-25','Jun-25','Jul-25','Aug-25','Sep-25','Oct-25','Nov-25','Dec-25'];
+var gv=[172,172,184,178,182,172,190,193,172,167,179,175,184,138,206,177,154,150,192,168,161,210,173,158];
+var dc=[274,246,289,276,266,262,294,302,262,262,267,275,300,228,299,275,253,254,307,277,254,324,260,272];
+new Chart(document.getElementById('chartCombo').getContext('2d'),{
+  type:'bar',
+  data:{labels:months,datasets:[
+    {label:'Default Value (Rs.Cr)',type:'bar',data:gv,backgroundColor:gv.map(function(v){return v>=200?'rgba(255,51,102,0.72)':v>=180?'rgba(255,51,102,0.52)':'rgba(0,210,255,0.52)'}),borderColor:gv.map(function(v){return v>=200?C.crimson:C.cyan}),borderWidth:1,borderRadius:4,yAxisID:'y'},
+    {label:'Default Count',type:'line',data:dc,borderColor:C.teal,backgroundColor:'rgba(56,189,248,0.08)',borderWidth:2.2,pointBackgroundColor:dc.map(function(v){return v>=300?C.crimson:C.teal}),pointBorderColor:'#080D18',pointBorderWidth:2,pointRadius:3,pointHoverRadius:5,tension:0.4,fill:true,yAxisID:'y2'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'bottom',labels:{color:'#8CA5C5',padding:10,font:{size:9.5},boxWidth:11,boxHeight:11}},tooltip:{...TT}},
+    scales:{x:{grid:{color:'rgba(38,60,100,0.3)'},ticks:{color:'#4B6380',font:{size:8},maxRotation:45,minRotation:45}},
+      y:{position:'left',grid:{color:C.grid},ticks:{color:'#4B6380',font:{size:9},callback:function(v){return'Rs.'+v}},title:{display:true,text:'Default Amount (Rs.Cr)',color:'#4B6380',font:{size:8}}},
+      y2:{position:'right',grid:{display:false},ticks:{color:C.teal,font:{size:9}},title:{display:true,text:'Default Count',color:C.teal,font:{size:8}}}}}
+});
+
+// DONUT - Location
+new Chart(document.getElementById('chartDonut').getContext('2d'),{
+  type:'doughnut',
+  data:{labels:['Tier 1 Metro','Tier 2 Growth'],datasets:[{data:[2167,2039],backgroundColor:['rgba(0,210,255,0.75)','rgba(56,189,248,0.65)'],borderColor:['#00D2FF','#38BDF8'],borderWidth:2,hoverOffset:6}]},
+  options:{responsive:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:function(c){return' Rs.'+(c.raw/100).toFixed(2)+'bn'}}}}}
+});
+
+// DONUT - CIBIL
+new Chart(document.getElementById('chartCibilDonut').getContext('2d'),{
+  type:'doughnut',
+  data:{labels:['Prime','Near Prime','Subprime','Deep Subprime'],datasets:[{data:[4707,4507,2022,507],backgroundColor:['rgba(0,210,255,0.8)','rgba(56,189,248,0.7)','rgba(255,51,102,0.75)','rgba(255,0,51,0.8)'],borderColor:['#00D2FF','#38BDF8','#FF3366','#FF0033'],borderWidth:2,hoverOffset:6}]},
+  options:{responsive:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:function(c){return' Rs.'+(c.raw/100).toFixed(2)+'bn'}}}}}
+});
+
+// Interactivity
+document.querySelectorAll('.vtab').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.vtab').forEach(function(x){x.classList.remove('on')});t.classList.add('on')})});
+document.querySelectorAll('.mtab').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.mtab').forEach(function(x){x.classList.remove('on')});t.classList.add('on')})});
+document.querySelectorAll('.sbi').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.sbi').forEach(function(x){x.classList.remove('on')});t.classList.add('on')})});
+</script>
+</body>
+</html>
